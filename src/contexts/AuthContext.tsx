@@ -1,12 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { projectId, publicAnonKey } from '../utils/supabase/info';
+import { supabaseUrl, supabaseAnonKey } from '../utils/supabase/info';
 import { apiCall } from '../utils/api';
 
-const supabase = createClient(
-  `https://${projectId}.supabase.co`,
-  publicAnonKey
-);
+// Check if Supabase is properly configured
+const isSupabaseConfigured = () => {
+  return supabaseUrl && supabaseAnonKey &&
+         supabaseUrl !== `https://pgzezvygfiwxknxnfbbv.supabase.co` &&
+         supabaseAnonKey !== 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBnemV6dnlnZml3eGtueG5mYmJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE1NjM4MzEsImV4cCI6MjA3NzEzOTgzMX0.LjpQ4gLDhGxK24g8w6mVzY64G2U4thmM_NHO2QylZNg';
+};
+
+const supabase = isSupabaseConfigured() ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
 interface User {
   id: string;
@@ -21,6 +25,7 @@ interface AuthContextType {
   user: User | null;
   accessToken: string | null;
   loading: boolean;
+  isSupabaseConfigured: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, username: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -39,6 +44,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   async function checkSession() {
+    if (!supabase) return;
+
     try {
       const token = localStorage.getItem('accessToken');
       if (token) {
@@ -69,6 +76,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function login(email: string, password: string) {
+    if (!supabase) throw new Error('Supabase not configured');
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -105,7 +114,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function logout() {
     try {
-      await supabase.auth.signOut();
+      if (supabase) {
+        await supabase.auth.signOut();
+      }
       setUser(null);
       setAccessToken(null);
       localStorage.removeItem('accessToken');
@@ -131,7 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, accessToken, loading, login, signup, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, accessToken, loading, isSupabaseConfigured: isSupabaseConfigured(), login, signup, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
@@ -144,3 +155,4 @@ export function useAuth() {
   }
   return context;
 }
+
