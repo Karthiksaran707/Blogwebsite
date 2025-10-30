@@ -1,7 +1,7 @@
 
   # Blog Website Navigation Layout
 
-  This is a code bundle for Blog Website Navigation Layout. The original project is available at https://www.figma.com/design/ujzJakpkzyRuLxHewLCcHp/Blog-Website-Navigation-Layout.
+  This is a code bundle for Blog Website Navigation Layout.
 
   ## Running the code
 
